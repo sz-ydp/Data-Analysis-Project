@@ -23,8 +23,10 @@ df_twitter数据集<br>
 df_image数据集<br>  
  
 tweet_id数据类型是int，不正确<br>
-p1\p2\p3 名字大小写不一致<br>
-df_tweet数据集<br>
+p1\p2\p3 名字大小写不一致<br>  
+
+df_tweet数据集<br>  
+
 tweet_id数据类型是int，不正确<br>  
 
 清洁度<br>   
