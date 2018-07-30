@@ -1,0 +1,501 @@
+白葡萄酒质量数据探索分析
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+
+# 加载你最终使用的所有组件
+# 在这个代码块的分析中。
+
+# 注意，在这个代码块中，将参数 "echo" 设为假。
+# This prevents the code from displaying in the knitted HTML output.这可以避免代码混入 HTML 输出显示。
+# 应当在文件中，对所有代码块设为 echo=FALSE 。
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+
+```
+#数据集概述
+   本报告探索了白葡萄酒质量数据集。数据集包含4,898种葡萄酒，及11个量化每种酒化学成分的变量。至少 3名葡萄酒专家对每种酒的质量进行了评分，分数在0（非常差）和10（非常好）之间。
+
+   现在导入数据集。
+```{r echo=FALSE, Load_the_Data}
+# 加载所需数据包
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(GGally)
+library(memisc)
+
+# 加载数据
+wine <- read.csv('wineQualityWhites.csv')
+
+# 移除索引列
+wine_data <- subset(wine, select = -c(X))
+```
+
+
+## 单变量绘图选择
+```{r echo=FALSE, Univariate_Plots}
+# 分析数据集结构
+dim(wine_data)
+str(wine_data)
+summary(wine_data)
+
+```
+   该数据集有12个变量，4898个观察值。下面将对质量、固定酸度、挥发酸、含糖量、密度、酸碱度、酒精含量等12个特征进行单个变量探索分析。
+```{r}
+# 绘制质量分布图形
+qplot(x = quality,data = wine_data)+
+  geom_bar()
+```
+  
+   对白葡萄酒质量数据进行分析。得出白葡萄酒质量很差和很好的酒的数量都相对较少，白葡萄酒的质量评分主要分布在6。下面对白葡萄酒的质量进行等级分组并绘制图形进行探索。  
+   
+```{r}
+# 对质量进行等级分组
+quality_level <- ifelse(
+  wine_data$quality<=2,"worst",
+  ifelse(
+    wine_data$quality<=4,"worse",
+    ifelse(
+      wine_data$quality<=6,"medium",
+      ifelse(
+        wine_data$quality<=8,"good",
+        ifelse(
+          wine_data$quality<=10,"best"
+        )
+      )
+    )
+  )
+)
+table(quality_level)
+
+# 绘制质量等级图形
+qplot(quality_level, data= wine_data)+
+  geom_bar()
+
+```
+  
+  对质量等级进行探索发现，大多数白葡萄酒质量属于中等，差、好、很好质量的白葡萄酒分布较少，从这份数据集中没有看到很差质量的白葡萄酒分布。  
+  
+   
+```{r}
+# 绘制固定酸直方图
+qplot(fixed.acidity, data= wine_data)+
+  scale_x_continuous(limits = c(3,12),breaks = seq(3,12,1))
+```
+  
+  对白葡萄酒的固定酸度进行绘图分析。得出白葡萄酒的固定酸度主要分布在6-7.5之间，酸度很低或者很高的分布相对较少。
+```{r}
+# 绘制挥发酸直方图
+qplot(volatile.acidity, data = wine_data)
+```
+  
+  对白葡萄酒的挥发性酸进行分析，得出白葡萄酒的挥发酸度主要集中在0.15-0.35之间。挥发性酸偏高的或者极低的分布少。  
+  
+```{r}
+qplot(citric.acid, data = wine_data)+
+  scale_x_continuous(limits = c(0,1.2))
+```
+  
+  对白葡萄酒中的柠檬酸分析发现，柠檬符合正太分布的趋势，主要分布在0.25-0.37之间。  
+  
+```{r}
+qplot(residual.sugar, data = wine_data,binwidth = 1)+
+  scale_x_continuous(limits = c(0, 28),breaks = seq(0,28,2))
+```
+  
+  对白葡萄酒的含糖量量进行分析发现，含糖量含量主要分布在很低的水平，甜度较高的白葡萄酒偏少。下面含糖量进行等级分组并绘图探索。  
+```{r}
+# 对含糖量进行等级分组
+residual.sugar_level <- ifelse(
+  wine_data$residual.sugar<=6,"Dry",
+  ifelse(
+    wine_data$residual.sugar<=21,"Off-Dry",
+    ifelse(
+      wine_data$residual.sugar<=72,"Sweet",
+      ifelse(
+        wine_data$residual.sugar<=130,"Very Sweet"
+      )
+    )
+  )
+)
+table(residual.sugar_level)
+
+# 绘制含糖量等级图形
+qplot(residual.sugar_level, data= wine_data)+
+  geom_bar()
+```
+  
+  白葡萄酒含糖量主要分布在Dry\off-Dry,甜分布极少，很甜的甚至从这份数据集中看不到。
+    
+```{r}
+qplot(chlorides, data = wine_data,binwidth = 0.01)+
+  scale_x_continuous(limits = c(0,0.3),breaks = seq(0,0.3,0.02))
+```
+  
+  白葡萄酒中的含盐量主要分布在0.03-0.05之间，含盐量含量在0.01、0.06-0.24之间的很少。  
+```{r}
+qplot(free.sulfur.dioxide, data = wine_data,binwidth = 5)+
+  scale_x_continuous(limits = c(0,150),breaks = seq(0,150,20))
+```
+  
+  白葡萄酒中的游离的硫离子主要分布在5-60之间。  
+```{r}
+qplot(total.sulfur.dioxide, data = wine_data)+
+  scale_x_continuous(breaks = seq(0,500,50))
+```
+  
+  白葡萄酒中二氧化硫的含量主要集中在100-175之间。可见，白葡萄酒中的二氧化硫含量大多数处于中等水平。  
+  
+    
+```{r}
+qplot(density, data = wine_data)
+```
+  
+  对白葡萄酒的密度分析发现，白葡萄酒的密度主要分布在0.99-1之间，与水的密度很接近。
+```{r}
+qplot(pH, data = wine_data)
+
+summary(wine_data$pH)
+```
+   
+   对白葡萄酒的酸碱度分析发现，白葡萄酒的PH值主要分布在3-3.3。对其进行描述性统计得出，中位数和平均值3.18和3.188。白葡萄酒普遍偏酸性。   
+```{r}
+qplot(sulphates, data = wine_data,binwidth = 0.02)+
+  scale_x_continuous(breaks = seq(0,1.5,0.1))
+```
+  
+  白葡萄酒中硫酸盐含量主要分布在0.35-0.55之间。硫酸盐含量较高的比较少。   
+```{r}
+qplot(alcohol, data = wine_data)
+
+summary(wine_data$alcohol)
+```
+  
+  通过对白葡萄酒的酒精含量分析得出，白葡萄酒的含量主要分布在9%-11%之间。对其中位数和平均值分析发现，酒精含量分别为你10.4%、10.51%。酒精含量特别低或者酒精含量很高的分布较少，可见白葡萄酒的酒精含量较低。  
+  
+  
+# 单变量分析
+
+### 你的数据集结构是什么？  
+
+数据集中有4898种白葡萄酒，有12个特征（固定酸度，挥发酸，柠檬酸，含糖量，含盐量，游离硫元素，总共硫含量，密度，酸碱度，添加剂，酒精含量，质量）质量是整型，按照0（非常差）-10（非常好）分不等。其他特征是数字类型。    
+  
+  其他观察：  
+  - 挥发酸含量过高会导致葡萄酒味道不好，白葡萄酒的挥发酸主要分布在较低的数值间。  
+  - 少量柠檬酸可以增加葡萄酒的风味。  
+  - 白葡萄酒的PH值大多数是3-4之间。  
+  - 白葡萄酒的质量等级在中等水平的居多。  
+  - 白葡萄酒的含糖量主要在干燥水平，甜或者很甜的分布很少。
+
+### 你的数据集内感兴趣的主要特性有哪些？  
+
+我希望通过该数据集研究哪个化学成分影响白葡萄酒的质量。我认为固定酸、挥发酸、含糖量、密度、PH、酒精含量都有可能影响白葡萄酒的质量，可能会是这些特征组合起来觉得白葡萄酒的质量。
+
+### 你认为数据集内哪些其他特征可以帮助你探索兴趣特点？  
+  固定酸、挥发酸、含糖量、密度、PH、酒精含量这些特征，或者这些特征与其他特征的组合都可以帮助我进行数据分析探索。
+  
+  
+### 根据数据集内已有变量，你是否创建了任何新变量？  
+  
+  目前对数据集中的质量、含糖量进行了等级划分，这样清楚的了解白葡萄酒的质量水平区间以及白葡萄酒的甜度水平。  
+  
+### 在已经探究的特性中，是否存在任何异常分布？你是否对数据进行一些操作，如清洁、调整或改变数据的形式？如果是，你为什么会这样做？  
+  
+  目前已经对固定酸、挥发酸、含糖量、密度、PH、酒精含量及质量等特征进行了单变量探索，暂时只能得出这些特征的分布情况，还无法确认哪些特征会影响其质量，下面将进一步探索白葡萄酒的特征是否存在相关性。
+  
+# 双变量绘图选择   
+1、首先探索各个变量之间的相关性。
+  
+```{r echo=FALSE,fig.width=10,fig.height=10} 
+# 绘制并计算数据集中各个特征的相关性
+
+ggcorr(wine_data,
+       method = c("all.obs","spearman"),
+       nbreaks = 4,palette = "PuOr",label = TRUE,
+       name = "spearman correlation coeff.(rho)",
+       hjust=0.8,angle=-70,size=3)+
+  ggtitle("Spearman Correlation coefficient matrix")
+  
+```
+  
+  由以上的分析发现密度与chlorides、residual.sugar、 total.sulfur.dioxide具有很强的相关性。白酒的质量评分也与酒精浓度、PH几个特征有相关性。
+  
+  2、下面对白葡萄酒的密度进行探索。  
+  
+```{r}
+# 绘制含盐量与浓度之间的散点图
+ggplot(aes(x=chlorides,y=density),data=wine_data)+
+  geom_point(alpha=1/10,position = 'jitter')+
+  geom_smooth(method = 'lm',color = 'red')
+
+cor.test(x = wine_data$chlorides,y = wine_data$density,method ='pearson')
+```
+   
+   对白葡萄酒的含盐量与密度进行绘图发现，两者之间存在着一定的相关性。求解其相关系数得出，相关系数是0.257，相关性中等。
+```{r}
+# 绘制含糖量与浓度之间的散点图
+ggplot(aes(x=residual.sugar,y=density),data=wine_data)+
+  geom_point(alpha=1/15,position = 'jitter')+
+  xlim(0,35)
+```  
+ 
+
+ 通过含糖量与密度之间的散点图发现，随着含糖量的增加，密度逐渐增加。两者之间存在着很强的正相关。下面计算其两者之间的相关系数。  
+```{r}
+# 计算含糖量与密度之间的相关系数
+cor.test(x = wine_data$residual.sugar,y = wine_data$density,method ='pearson')
+```  
+  
+  相关系数为0.84，含糖量与密度存在着很大的相关性。绘制含糖量等级与密度之间的关系。 
+```{r}
+ggplot(wine_data,aes(x = residual.sugar_level,y = density))+
+  geom_boxplot()+
+  scale_y_continuous(limits = c(0.985,1.02))+
+  stat_summary(fun.y = "mean", 
+      geom = "point", 
+      color = "red")+
+  geom_smooth(method='lm', aes(group = 1),color = 'red')
+  
+```
+  
+  不同含糖量等级，随着含糖量的均值的增加，密度呈现增加的趋势。
+ 
+  
+```{r}
+
+ggplot(aes(x=total.sulfur.dioxide,y=density),data=wine_data)+
+  geom_point(alpha=1/15,position = 'jitter')
+
+cor.test(x = wine_data$total.sulfur.dioxide,y = wine_data$density,method ='pearson')
+```    
+对密度与二氧化硫含量之间的关系进行散点图探索分析，得出两者之间存在着相关性，相关系数为0.53，相关性中等。  
+
+3、下面分析酸度与PH值之间的关系。  
+```{r}
+ggplot(aes(x= citric.acid, y= pH), data= wine_data)+
+  geom_jitter(alpha = 1/15)+
+  geom_smooth()
+```
+  
+  白葡萄酒随着柠檬酸的增加，PH逐渐降低。  
+```{r}
+ggplot(aes(x= fixed.acidity, y= pH), data= wine_data)+
+  geom_jitter(alpha = 1/15)+
+  geom_smooth()
+```
+  
+  白葡萄酒随着固定酸的增加，PH逐渐降低。
+
+
+  4、下面对密度、PH值、酒精浓度与质量等级进行探索。     
+```{r}
+ggplot(wine_data,aes(factor(quality_level), density)) + 
+geom_jitter(alpha=1/10) +
+geom_boxplot()+
+scale_y_continuous(limits = c(0.985,1.005))+
+stat_summary(fun.y = "mean", 
+      geom = "point", 
+      color = "red")+
+geom_smooth(method='lm', aes(group = 1),color = 'blue')
+```
+
+通过对白葡萄酒密度与质量等级进行绘图发现，随着质量等级的升高，密度的平均值是逐渐减少。  
+
+```{r}
+ggplot(wine_data,aes(factor(quality_level), pH)) + 
+geom_jitter(alpha=1/10) +
+geom_boxplot()+
+
+stat_summary(fun.y = "mean", 
+      geom = "point", 
+      color = "red")+
+geom_smooth(method='lm', aes(group = 1),color = 'blue')
+
+cor.test(x = wine_data$pH,y = wine_data$quality,method ='pearson')
+```
+白葡萄酒的PH值与质量之间的相关性很小，相关系数0.099。从绘制的箱线图发现，随着白葡萄酒质量等级的增加，ph值逐渐升高。可见，白葡酒的质量越好，pH值越高。  
+
+  
+```{r}
+ggplot(aes(x=alcohol,y=quality),data=wine_data)+
+  geom_point(alpha = 1/10,position = 'jitter')
+
+cor.test(x = wine_data$alcohol,y = wine_data$quality,method ='pearson')
+```  
+  
+  通过对白葡萄酒酒精浓度与质量进行绘图与相关系数计算，得出相关系数是 0.44，相关性中等，说明酒精浓度一定程度会影响白葡萄酒的质量。  
+```{r}
+# 对质量与酒精浓度绘制 箱线图观察其间关系
+ggplot(wine_data,aes(factor(quality), alcohol)) + 
+geom_jitter(alpha=0.3) +
+geom_boxplot( alpha = 0.5,color = 'blue')+
+stat_summary(fun.y = "mean", 
+      geom = "point", 
+      color = "red")+
+geom_smooth(method='lm', aes(group = 1),color = 'red')
+```  
+  
+  对图片进行分析可知，白葡萄酒的品质越高，对应的酒精浓度就越高。  
+
+ 
+# 双变量分析
+
+
+### 探讨你在这部分探究中观察到的一些关系。这些感兴趣的特性与数据集内其他特性有什么区别？  
+在此部分中探索了影响密度的几个特征，发现含糖量与密度的相关性最强，含糖量等级越高，密度越高。其次是与二氧化硫含量相关性中等。
+  探索了影响PH值的几个酸度特征， 发现pH值随着柠檬酸和固定酸的增加而降低。  
+  对质量的分析发现，质量与密度均值呈现负相关，质量等级越高，密度越小；质量与PH值之间呈现正相关，质量越高，pH值越高；最后是酒精浓度与质量的关系，酒精浓度越高，质量越高。
+  
+### 你是否观察到主要特性与其他特性之间的有趣关系？  
+在分析中发现白葡萄酒的含含糖量量越高，对应的密度会越高，但是密度与白葡萄酒之间的相关性又不是那么强。猜想含糖量与密度会不会对白葡萄酒的质量有影响呢。
+
+### 你发现最强的关系是什么？  
+通过对目前的可视化分析得出的最强的关系是，含糖量与密度之间具有很强的正相关性。
+
+
+
+
+# 多变量绘图选择  
+本次探索主要研究的是哪些特征会影响白葡萄酒的质量，但是通过单变量与双变量的探索分析，仍然没有发现相关性极强的特征，接下来我们将继续进行多变量探索。  
+
+
+```{r echo=FALSE, Multivariate_Plots}
+# 绘制不同质量白葡萄酒，含糖量与密度之间的关系图
+ggplot(aes(x = residual.sugar, y = density, color = factor(quality)),
+       data = wine_data) +
+  coord_cartesian(xlim = c(0,30),
+                  ylim = c(0.985,1.005))+
+  geom_jitter()+
+  scale_color_brewer(type = "seq")+
+  theme_dark()+
+  labs(x = "Residual.sugar(g / dm^3)",
+       y = "Density(mg/l)",
+       title = "Relationship of residual.sugar vs density with colored quality levels")
+```  
+  
+  质量较高的白葡萄酒的密度处于较低的水平，随着含糖量含量的增加，密度逐渐增加。下面探索酒精浓度、密度与质量之间的关系。  
+  下面对不同等级质量的酒精浓度与密度之间进行探索。  
+  
+```{r}
+# 绘制不同质量白葡萄酒酒精浓度与密度之间的关系
+ggplot(aes(x = density, y = alcohol,color=factor(quality_level)),data = wine_data) +
+  coord_cartesian(xlim = c(0.985,1.002),
+                  ylim = c(5,15))+
+  geom_jitter(size = 1)+
+  geom_smooth(method = 'lm')+
+  scale_x_continuous(breaks = seq(0.985,1.002,0.002))+
+  scale_color_brewer(type = 'seq',guide_legend(title = 'Quality levels'))+
+  theme_dark()+
+  labs(x = "Density(mg/l)",
+       y = "Alcohol(% by volume)",
+       title = "Relationship of Density vs Alcohol with colored quality levels")
+  
+```  
+
+  由以上分析发现酒精浓度与密度之间存在着很强的相关性，随着酒精浓度的升高，密度逐渐降低，不同质量的白葡萄酒也是此趋势。  
+```{r}
+
+ggplot(aes(x = fixed.acidity, y = volatile.acidity),
+       data = wine_data) +
+  geom_jitter(aes(color=quality_level),sta ='summary',fun.y =mean)+
+  scale_color_brewer(type = 'seq',guide_legend(title = 'Quality levels'))+
+  labs(x = "fixed.acidity(g / dm^3)",
+       y = "volatile.acidity(% g / dm^3)",
+       title = "Relationship of fixed.acidity vs volatile.acidity with colored quality levels")
+  
+```
+  
+  通过对固定酸与挥发酸是否对质量有影响进行分析得出，质量等级越高的白葡萄酒，分布在固定酸和挥发酸较低的区域，质量等级差的白葡萄酒分布在固定酸较高和挥发酸较高的区域。
+  
+```{r}
+# 构建线性模型
+m1 <- lm(I(log(quality)) ~ I(alcohol), data = wine_data)
+m2 <- update(m1, ~ . + density)
+m3 <- update(m2, ~ . + residual.sugar)
+m4 <- update(m3, ~ . + total.sulfur.dioxide)
+m5 <- update(m4, ~ . + sulphates)
+mtable(m1, m2, m3, m4, m5)
+```  
+  
+  该线性模型中的变量占白葡萄酒质量的20%，可见这些变量对白葡萄酒质量的影响一般。
+
+# 多变量分析  
+
+
+###  探讨你在这部分探究中观察到的一些关系。通过观察感兴趣的特性，是否存在相互促进的特性？   
+  
+  在此部分中探讨了含糖量、密度与质量的关系，不同的质量的白葡萄酒随着含糖量量的增加，密度逐渐增加。  
+  不同质量的白葡萄酒的酒精浓度、密度之间的关系是，随着酒精浓度的增加，密度逐渐下降，不同评分质量的白葡萄酒均是这个趋势。  
+  对于不同质量等级的白葡萄酒的固定酸与挥发酸分布情况探索得出，质量等级越高的白葡萄酒，分布在固定酸较高和挥发酸较低的区域，质量等级差的白葡萄酒分布在固定酸较高和挥发酸较高的区域。
+
+
+### 这些特性之间是否存在有趣或惊人的联系呢？    
+通过探索发现，酒精浓度、密度和白葡萄酒的评分质量之前存在着很大的相关性。含糖量与密度之间存在着相关性。
+
+
+### 选项：你是否创建过数据集的任何模型？讨论你模型的优缺点。  
+最后对quality、alcohol、density、residual.sugar、total.sulfur.dioxide、sulphates这几个特征构建的线性模型，得出这些特征在白葡萄酒质量的20%。
+
+------
+
+# 定稿图与总结
+
+### 绘图一
+```{r echo=FALSE, Plot_One}
+ggplot(wine_data,aes(factor(quality), alcohol)) + 
+  geom_jitter(alpha=0.3) +
+  geom_boxplot( alpha = 0.5,color = 'blue')+
+  stat_summary(fun.y = "mean", 
+      geom = "point", 
+      color = "red")+
+  geom_smooth(method='lm', aes(group = 1),color = 'red')+
+  ggtitle('The relationship between quality and alcohol')+
+  xlab('Quality levels')+
+  ylab("Alcohol(% by volume)")
+```
+
+### 描述一  
+分析发现，不同质量白葡萄酒评分越高，酒精浓度越高。随着白葡萄酒的评分等级升高，酒精含量的平均值也是在逐渐升高的。
+
+
+### 绘图二
+```{r echo=FALSE, Plot_Two}
+ggplot(aes(x = density, y = alcohol,color=factor(quality_level)),data = wine_data) +
+  coord_cartesian(xlim = c(0.985,1.002),
+                  ylim = c(5,15))+
+  geom_jitter(size = 1)+
+  geom_smooth(method = 'lm')+
+  scale_x_continuous(breaks = seq(0.985,1.002,0.002))+
+  scale_color_brewer(type = 'seq',guide_legend(title = 'Quality levels'))+
+  theme_dark()+
+  labs(x = "Density(mg/l)",
+       y = "Alcohol(% by volume)",
+       title = "Relationship of Density vs Alcohol with colored quality levels")
+```
+
+### 描述二  
+不同质量的葡萄酒，随着酒精浓度的减少，密度逐渐增加。白葡萄酒的质量等级越高，相应的酒精含量越高，质量等级越差，酒精浓度分布在较低区域。
+
+
+### 绘图三
+```{r echo=FALSE, Plot_Three}
+ggplot(aes(x = fixed.acidity, y = volatile.acidity),
+       data = wine_data) +
+  geom_jitter(aes(color=quality_level),sta ='summary',fun.y =mean)+
+  scale_color_brewer(type = 'seq',guide_legend(title = 'Quality levels'))+
+  labs(x = "fixed.acidity(g / dm^3)",
+       y = "volatile.acidity(% g / dm^3)",
+       title = "Relationship of fixed.acidity vs volatile.acidity with colored quality levels")
+```
+
+### 描述三  
+质量等级越高的白葡萄酒，分布在固定酸和挥发酸较低的区域，质量等级差的白葡萄酒分布在固定酸较高和挥发酸较高的区域。
+
+------
+
+# 反思  
+在对该数据集探索分析时，首先对数据集中特征进行单变量探索，探索他们在市场分布的状况。同时还增加了白葡萄质量等级、含糖量等级的变量，并对其进行了相关探索。其次对数据集中的相关性进行研究，在双变量分析时探索了几个相关性强的变量，以及与质量相关性强的变量。多变量分析中，增加变量对几个特征进行探索。   
+
+在探索过程，刚开始对其进行探索并没有发现与质量很强关系的特征。但是随着探索的逐步深入以及变量的增加，还是有一点发现，比如发现了酒精浓度与白葡萄酒质量之间存在着的的相关性；含糖量与密度之间的存在的极强相关性。后面根据这些相关性进行了密度与酒精浓度对质量影响的探索，同时发现了不同质量等级的白葡萄酒之间酒精浓度与密度的关系。
+
+对该数据集的探索，我应该还有很多方面可以继续探索，比如pH值与酸对不同质量的白葡萄酒是否有影响，或是不同添加剂会不会对白葡萄酒产生影响。或者采取更加合理的线性模型对其进行分析等等。
